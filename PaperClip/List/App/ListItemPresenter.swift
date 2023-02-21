@@ -10,9 +10,14 @@ protocol ListItemPresenterProtocol {
 final class ListItemPresenter: ListItemPresenterProtocol {
     
     private weak var view: (any ListItemViewProtocol)?
+    private let currencyFormatter: NumberFormatter
     
-    init(view: any ListItemViewProtocol) {
+    init(
+        view: any ListItemViewProtocol,
+        currencyFormatter: NumberFormatter = Injection.currencyFormatter
+    ) {
         self.view = view
+        self.currencyFormatter = currencyFormatter
     }
     
     func presentLoading() {
@@ -39,7 +44,7 @@ final class ListItemPresenter: ListItemPresenterProtocol {
                     .compactMap { item -> ListItemViewModel? in
                         guard !item.isUrgent else { return nil }
                         
-                        return item.toViewModel()
+                        return item.toViewModel(with: currencyFormatter)
                     }
             }
         result[.urgent] = items
@@ -49,7 +54,7 @@ final class ListItemPresenter: ListItemPresenterProtocol {
             .compactMap { item -> ListItemViewModel? in
                 guard item.isUrgent else { return nil }
                 
-                return item.toViewModel()
+                return item.toViewModel(with: currencyFormatter)
             }
         
         result = result.compactMapValues({ $0.isEmpty ? nil : $0 })
@@ -84,14 +89,14 @@ final class ListItemPresenter: ListItemPresenterProtocol {
 }
 
 private extension Item {
-    func toViewModel() -> ListItemViewModel {
+    func toViewModel(with currencyFormatter: NumberFormatter) -> ListItemViewModel {
         ListItemViewModel(
             id: id,
             title: title,
             category: category.name,
             imageURL: imagesURL.small,
             subtitle: String(description.prefix(100)),
-            price: Injection.currencyFormatter.string(from: NSNumber(value: price)) ?? TranslationKey.ListItemViewControllerNoPricePlaceholder.localized,
+            price: currencyFormatter.string(from: NSNumber(value: price)) ?? TranslationKey.ListItemViewControllerNoPricePlaceholder.localized,
             isUrgent: isUrgent
         )
     }

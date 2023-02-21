@@ -1,2 +1,7 @@
+"ListItemViewController.Navbar.Title" = "Hello 👋";
+"Badge.Urgent" = "🌟 URGENT";
+"ListItemViewController.Navbar.SearchPlaceholder" = "Search";
 "ListItemViewController.LoadingPlaceholder" = "Loading";
+"ListItemViewController.Popup.NetworkFailedMessage" = "Something went wrong 🥲";
+"ListItemViewController.Popup.NetworkFailedRetryButton" = "Retry";
 "ListItemViewController.NoPricePlaceholder" = "No price";

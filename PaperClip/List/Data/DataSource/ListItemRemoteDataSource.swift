@@ -8,9 +8,6 @@ final class ListItemRemoteDataSource: RemoteDataSource, ListItemRemoteDataSource
     
     var items: Result<[ItemJSON], RemoteError> {
         get async {
-//            if #available(iOS 16.0, *) { // TODO PBA - To remove
-//                try? await Task.sleep(for: .seconds(5))
-//            }
             await get(data: [ItemJSON].self)
         }
     }

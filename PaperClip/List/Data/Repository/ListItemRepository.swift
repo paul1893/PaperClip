@@ -8,14 +8,16 @@ final class ListItemRepository: ListItemRepositoryProtocol {
     
     private let categoryRemoteDataSource: any CategoryRemoteDataSourceProtocol
     private let listItemRemoteDataSource: any ListItemRemoteDataSourceProtocol
-    private let dateFormatter = ISO8601DateFormatter()
+    private let iso8601DateFormatter: ISO8601DateFormatter
     
     init(
         categoryRemoteDataSource: any CategoryRemoteDataSourceProtocol,
-        listItemRemoteDataSource: any ListItemRemoteDataSourceProtocol
+        listItemRemoteDataSource: any ListItemRemoteDataSourceProtocol,
+        iso8601DateFormatter: ISO8601DateFormatter = ISO8601DateFormatter()
     ) {
         self.categoryRemoteDataSource = categoryRemoteDataSource
         self.listItemRemoteDataSource = listItemRemoteDataSource
+        self.iso8601DateFormatter = iso8601DateFormatter
     }
     
     var items: Result<[Item], RemoteError> {
@@ -27,7 +29,7 @@ final class ListItemRepository: ListItemRepositoryProtocol {
             return await itemsResult.map {
                     $0.compactMap { itemJSON in
                         guard
-                            let creationDate = dateFormatter.date(from: itemJSON.creationDate),
+                            let creationDate = iso8601DateFormatter.date(from: itemJSON.creationDate),
                             let category = categories?.first(where: { $0.id == itemJSON.categoryId })
                         else {
                             print("⚠️ Item \(itemJSON.id) ignored from decoding.")
