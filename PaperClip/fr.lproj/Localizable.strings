@@ -1,0 +1,7 @@
+"ListItemViewController.Navbar.Title" = "Bonjour 👋";
+"ListItemViewController.Navbar.SearchPlaceholder" = "Rechercher";
+"ListItemViewController.LoadingPlaceholder" = "Chargement";
+"ListItemViewController.Popup.NetworkFailedMessage" = "Nous n'avons pas pu récupérer les données à temps 🥲";
+"ListItemViewController.Popup.NetworkFailedRetryButton" = "Réessayez";
+"ListItemViewController.NoPricePlaceholder" = "Aucun prix";
+"Badge.Urgent" = "🌟 URGENT";
