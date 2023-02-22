@@ -1,3 +1,3 @@
-enum ItemViewModel: Hashable {
+enum ListItemState: Hashable {
     case loading(Int), some(ListItemViewModel)
 }

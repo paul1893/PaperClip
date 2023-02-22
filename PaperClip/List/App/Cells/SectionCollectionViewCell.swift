@@ -1,9 +1,9 @@
 import UIKit
 
-final class HeaderSupplementaryView: UICollectionViewCell {
+final class SectionCollectionViewCell: UICollectionViewCell {
     // MARK: Identifiers
 
-    static let reuseIdentifier = String(describing: HeaderSupplementaryView.self)
+    static let reuseIdentifier = String(describing: SectionCollectionViewCell.self)
     static let elementKindIdentifier = "header"
 
     // MARK: Views

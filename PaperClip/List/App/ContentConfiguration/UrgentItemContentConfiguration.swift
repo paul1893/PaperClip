@@ -1,6 +1,6 @@
 import UIKit
 
-struct GridItemContentConfiguration: UIContentConfiguration, Hashable {
+struct UrgentItemContentConfiguration: UIContentConfiguration, Hashable {
     var image: UIImage?
     var title: String?
     var category: String?
@@ -8,7 +8,7 @@ struct GridItemContentConfiguration: UIContentConfiguration, Hashable {
     var isUrgent = false
 
     func makeContentView() -> UIView & UIContentView {
-        GridItemContentView(configuration: self)
+        UrgentItemContentView(configuration: self)
     }
 
     func updated(for state: UIConfigurationState) -> Self {
@@ -16,7 +16,7 @@ struct GridItemContentConfiguration: UIContentConfiguration, Hashable {
     }
 }
 
-private class GridItemContentView: UIView, UIContentView {
+private class UrgentItemContentView: UIView, UIContentView {
     // MARK: Views
 
     private lazy var imageView: UIImageView = {
@@ -82,19 +82,19 @@ private class GridItemContentView: UIView, UIContentView {
         return urgentBadgeLabel
     }()
 
-    private var appliedConfiguration: GridItemContentConfiguration?
+    private var appliedConfiguration: UrgentItemContentConfiguration?
 
     var configuration: UIContentConfiguration {
         get { appliedConfiguration ?? UIListContentConfiguration.cell() }
         set {
-            guard let newConfig = newValue as? GridItemContentConfiguration else {
+            guard let newConfig = newValue as? UrgentItemContentConfiguration else {
                 return
             }
             apply(configuration: newConfig)
         }
     }
 
-    init(configuration: GridItemContentConfiguration) {
+    init(configuration: UrgentItemContentConfiguration) {
         super.init(frame: .zero)
         self.configuration = configuration
         configureView()
@@ -132,7 +132,7 @@ private class GridItemContentView: UIView, UIContentView {
         badgesContainer.addArrangedSubview(urgentBadgeLabel)
     }
 
-    private func apply(configuration: GridItemContentConfiguration) {
+    private func apply(configuration: UrgentItemContentConfiguration) {
         guard appliedConfiguration != configuration else {
             return
         }

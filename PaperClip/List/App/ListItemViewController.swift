@@ -24,7 +24,7 @@ final class ListItemViewController: UIViewController {
         collectionView.collectionViewLayout = self.collectionLayout
         collectionView.allowsSelection = true
         collectionView.backgroundColor = .systemGray6
-        collectionView.register(HeaderSupplementaryView.self, forSupplementaryViewOfKind: HeaderSupplementaryView.elementKindIdentifier, withReuseIdentifier: HeaderSupplementaryView.reuseIdentifier)
+        collectionView.register(SectionCollectionViewCell.self, forSupplementaryViewOfKind: SectionCollectionViewCell.elementKindIdentifier, withReuseIdentifier: SectionCollectionViewCell.reuseIdentifier)
         return collectionView
     }()
 
@@ -40,26 +40,52 @@ final class ListItemViewController: UIViewController {
 
     // MARK: Private properties
 
-    private var collectionViewDataSource: ListItemCollectionViewDiffableDataSource!
-    private var currentSnapshot = NSDiffableDataSourceSnapshot<CategoryViewModel, ItemViewModel>()
-    private var currentTask: Task<Void, Never>?
+    private lazy var collectionViewDataSource = {
+        let defaultCellRegistration = createDefaultCellRegistration()
+        let urgentCellRegistration = createUrgentCellRegistration()
+        let loadingCellRegistration = createLoadingCellRegistration()
+        
+        return ListItemCollectionViewDiffableDataSource(collectionView: collectionView) { [weak self] collectionView, indexPath, item -> UICollectionViewCell? in
+            
+            guard let self else { return nil }
+            
+            if self.currentSnapshot.sectionIdentifiers[indexPath.section] == .urgent {
+                switch item {
+                    case .loading:
+                        return collectionView.dequeueConfiguredReusableCell(using: loadingCellRegistration, for: indexPath, item: ())
+                    case .some(let listItem):
+                        return collectionView.dequeueConfiguredReusableCell(using: urgentCellRegistration, for: indexPath, item: listItem)
+                }
+            } else {
+                switch item {
+                    case .loading:
+                        return collectionView.dequeueConfiguredReusableCell(using: loadingCellRegistration, for: indexPath, item: ())
+                    case .some(let listItem):
+                        let cell = collectionView.dequeueConfiguredReusableCell(using: defaultCellRegistration, for: indexPath, item: listItem)
+                        cell.accessories = [.disclosureIndicator()]
+                        return cell
+                }
+            }
+        }
+    }()
     private var collectionLayout: UICollectionViewLayout {
         let sectionProvider = { [weak self] (sectionIndex: Int, layoutEnvironment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection? in
-
+            
             guard let self else { return nil }
-
+            guard self.currentSnapshot.sectionIdentifiers.indices.contains(sectionIndex)  else { return nil }
+            
             let section: NSCollectionLayoutSection
-
+            
             if self.currentSnapshot.sectionIdentifiers[sectionIndex] == .urgent {
                 let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
                 let item = NSCollectionLayoutItem(layoutSize: itemSize)
-
+                
                 let groupSize = NSCollectionLayoutSize(
                     widthDimension: .fractionalWidth(layoutEnvironment.traitCollection.horizontalSizeClass == .compact ? 0.7 : 0.4),
                     heightDimension: .absolute(225)
                 )
                 let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-
+                
                 section = NSCollectionLayoutSection(group: group)
                 section.interGroupSpacing = 10
                 section.orthogonalScrollingBehavior = .continuous
@@ -78,29 +104,31 @@ final class ListItemViewController: UIViewController {
                 let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(150))
                 let item = NSCollectionLayoutItem(layoutSize: itemSize)
                 item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
-
+                
                 let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .estimated(150))
                 let itemInSection = self.currentSnapshot.numberOfItems(inSection: self.collectionViewDataSource.sections[sectionIndex].category)
                 let group = NSCollectionLayoutGroup.vertical(
                     layoutSize: groupSize,
                     subitems: itemInSection <= 2 ? [item] : [item, item, item]
                 )
-
+                
                 section = NSCollectionLayoutSection(group: group)
                 section.orthogonalScrollingBehavior = .continuous
                 section.interGroupSpacing = 10
                 section.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
-
+                
                 let headerItemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(100))
-                let headerItem = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerItemSize, elementKind: HeaderSupplementaryView.elementKindIdentifier, alignment: .top)
+                let headerItem = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerItemSize, elementKind: SectionCollectionViewCell.elementKindIdentifier, alignment: .top)
                 headerItem.pinToVisibleBounds = false
                 section.boundarySupplementaryItems = [headerItem]
-
+                
                 return section
             }
         }
         return UICollectionViewCompositionalLayout(sectionProvider: sectionProvider)
     }
+    private var currentSnapshot = NSDiffableDataSourceSnapshot<CategoryViewModel, ListItemState>()
+    private var currentTask: Task<Void, Never>?
 
     // MARK: Lifecycle
 
@@ -108,7 +136,6 @@ final class ListItemViewController: UIViewController {
         super.viewDidLoad()
         configureNavbar()
         configureCollectionView()
-        configureDataSource()
         currentTask?.cancel()
         currentTask = Task { [weak self] in await self?.interactor.viewDidLoad() }
     }
@@ -132,38 +159,9 @@ extension ListItemViewController {
         ])
     }
 
-    private func configureDataSource() {
-        let listCellRegistration = createListCellRegistration()
-        let gridCellRegistration = createGridCellRegistration()
-        let loadingCellRegistration = createLoadingCellRegistration()
-
-        collectionViewDataSource = ListItemCollectionViewDiffableDataSource(collectionView: collectionView) { [weak self] collectionView, indexPath, item -> UICollectionViewCell? in
-
-            guard let self else { return nil }
-
-            if self.currentSnapshot.sectionIdentifiers[indexPath.section] == .urgent {
-                switch item {
-                case .loading:
-                    return collectionView.dequeueConfiguredReusableCell(using: loadingCellRegistration, for: indexPath, item: ())
-                case .some(let listItem):
-                    return collectionView.dequeueConfiguredReusableCell(using: gridCellRegistration, for: indexPath, item: listItem)
-                }
-            } else {
-                switch item {
-                case .loading:
-                    return collectionView.dequeueConfiguredReusableCell(using: loadingCellRegistration, for: indexPath, item: ())
-                case .some(let listItem):
-                    let cell = collectionView.dequeueConfiguredReusableCell(using: listCellRegistration, for: indexPath, item: listItem)
-                    cell.accessories = [.disclosureIndicator()]
-                    return cell
-                }
-            }
-        }
-    }
-
     private func updateCollectionView(sections: [SectionViewModel], animated: Bool = true) {
         collectionViewDataSource.sections = sections
-        currentSnapshot = NSDiffableDataSourceSnapshot<CategoryViewModel, ItemViewModel>()
+        currentSnapshot = NSDiffableDataSourceSnapshot<CategoryViewModel, ListItemState>()
         for section in sections {
             currentSnapshot.appendSections([section.category])
             currentSnapshot.appendItems(section.items, toSection: section.category)
@@ -171,13 +169,13 @@ extension ListItemViewController {
         collectionViewDataSource.apply(currentSnapshot, animatingDifferences: animated)
     }
 
-    private func createGridCellRegistration() -> UICollectionView.CellRegistration<ListItemCollectionViewCell, ListItemViewModel> {
-        UICollectionView.CellRegistration<ListItemCollectionViewCell, ListItemViewModel> { [weak self] cell, _, item in
+    private func createUrgentCellRegistration() -> UICollectionView.CellRegistration<ReuseActionnableCollectionViewCell, ListItemViewModel> {
+        UICollectionView.CellRegistration<ReuseActionnableCollectionViewCell, ListItemViewModel> { [weak self] cell, _, item in
             guard let self else {
                 return
             }
 
-            var content = GridItemContentConfiguration()
+            var content = UrgentItemContentConfiguration()
             content.image = UIImage(systemName: "photo")
             content.category = item.category
             content.price = item.price
@@ -208,17 +206,17 @@ extension ListItemViewController {
                     }
                 }
 
-                cell.onReuse = {
+                cell.onReuse = { [weak self] in
                     if let token {
-                        self.loader.cancelLoad(token)
+                        self?.loader.cancelLoad(token)
                     }
                 }
             }
         }
     }
 
-    private func createLoadingCellRegistration() -> UICollectionView.CellRegistration<ListItemCollectionViewCell, Void> {
-        UICollectionView.CellRegistration<ListItemCollectionViewCell, Void> { [weak self] cell, _, _ in
+    private func createLoadingCellRegistration() -> UICollectionView.CellRegistration<ReuseActionnableCollectionViewCell, Void> {
+        UICollectionView.CellRegistration<ReuseActionnableCollectionViewCell, Void> { [weak self] cell, _, _ in
 
             cell.contentConfiguration = LoadingContentConfiguration()
 
@@ -230,8 +228,8 @@ extension ListItemViewController {
         }
     }
 
-    private func createListCellRegistration() -> UICollectionView.CellRegistration<ListItemCollectionViewCell, ListItemViewModel> {
-        UICollectionView.CellRegistration<ListItemCollectionViewCell, ListItemViewModel> { [weak self] cell, _, item in
+    private func createDefaultCellRegistration() -> UICollectionView.CellRegistration<ReuseActionnableCollectionViewCell, ListItemViewModel> {
+        UICollectionView.CellRegistration<ReuseActionnableCollectionViewCell, ListItemViewModel> { [weak self] cell, _, item in
             guard let self else {
                 return
             }
@@ -268,9 +266,9 @@ extension ListItemViewController {
                     }
                 }
 
-                cell.onReuse = {
+                cell.onReuse = { [weak self] in
                     if let token {
-                        self.loader.cancelLoad(token)
+                        self?.loader.cancelLoad(token)
                     }
                 }
             }
@@ -334,21 +332,21 @@ extension ListItemViewController: UISearchResultsUpdating, UISearchControllerDel
     }
 }
 
-private final class ListItemCollectionViewDiffableDataSource: UICollectionViewDiffableDataSource<CategoryViewModel, ItemViewModel> {
+private final class ListItemCollectionViewDiffableDataSource: UICollectionViewDiffableDataSource<CategoryViewModel, ListItemState> {
     var sections = [SectionViewModel]()
 
     override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
-        guard let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: HeaderSupplementaryView.reuseIdentifier, for: indexPath) as? HeaderSupplementaryView else {
-            return HeaderSupplementaryView()
+        guard let sectionView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: SectionCollectionViewCell.reuseIdentifier, for: indexPath) as? SectionCollectionViewCell else {
+            return SectionCollectionViewCell()
         }
 
         switch sections[indexPath.section].category {
         case .urgent:
-            headerView.title = nil
+            sectionView.title = nil
         case .section(let category):
-            headerView.title = category.name
+            sectionView.title = category.name
         }
 
-        return headerView
+        return sectionView
     }
 }

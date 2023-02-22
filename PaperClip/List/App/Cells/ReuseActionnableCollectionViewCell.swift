@@ -1,6 +1,6 @@
 import UIKit
 
-final class ListItemCollectionViewCell: UICollectionViewListCell {
+final class ReuseActionnableCollectionViewCell: UICollectionViewListCell {
     var onReuse: () -> Void = {}
 
     override func prepareForReuse() {
