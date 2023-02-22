@@ -1,12 +1,11 @@
-import XCTest
 @testable import PaperClip
+import XCTest
 
 final class ItemDetailInteractorTests: XCTestCase {
-    
     private var repository: ItemDetailRepositoryMock!
     private var presenter: ItemDetailPresenterMock!
     private var interactor: ItemDetailInteractor!
-    
+
     override func setUpWithError() throws {
         repository = ItemDetailRepositoryMock()
         presenter = ItemDetailPresenterMock()
@@ -29,10 +28,10 @@ final class ItemDetailInteractorTests: XCTestCase {
             isUrgent: false,
             siret: nil
         )
-        
+
         // WHEN
         await interactor.viewDidLoad(itemId: 0)
-        
+
         // THEN
         XCTAssertEqual(
             presenter.lastItemPresented,
@@ -51,22 +50,22 @@ final class ItemDetailInteractorTests: XCTestCase {
         XCTAssertEqual(presenter.presentCounter, 1)
         XCTAssertEqual(presenter.presentItemNotFoundCounter, 0)
     }
-    
+
     func test_viewDidLoad_when_no_item_found() async {
         // GIVEN
         repository.itemReturned = nil
-        
+
         // WHEN
         await interactor.viewDidLoad(itemId: 10)
-        
+
         // THEN
         XCTAssertEqual(presenter.presentCounter, 0)
         XCTAssertEqual(presenter.presentItemNotFoundCounter, 1)
     }
-
 }
 
 // MARK: Mocks
+
 final class ItemDetailRepositoryMock: ItemDetailRepositoryProtocol {
     var itemReturned: PaperClip.Item?
     var lastIdRequested: Int?
@@ -79,18 +78,15 @@ final class ItemDetailRepositoryMock: ItemDetailRepositoryProtocol {
 }
 
 final class ItemDetailPresenterMock: ItemDetailPresenterProtocol {
-    
     private(set) var lastItemPresented: PaperClip.Item?
     private(set) var presentCounter = 0
     func present(item: PaperClip.Item) {
         lastItemPresented = item
         presentCounter += 1
     }
-    
+
     private(set) var presentItemNotFoundCounter = 0
     func presentItemNotFound() {
         presentItemNotFoundCounter += 1
     }
-    
-    
 }

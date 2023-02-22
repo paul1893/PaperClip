@@ -1,24 +1,25 @@
 import UIKit
 
 final class HeaderSupplementaryView: UICollectionViewCell {
-    
     // MARK: Identifiers
+
     static let reuseIdentifier = String(describing: HeaderSupplementaryView.self)
     static let elementKindIdentifier = "header"
-    
+
     // MARK: Views
+
     private lazy var label: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     var title: String? {
         didSet {
             label.text = title
         }
     }
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         addSubview(label)
@@ -30,13 +31,14 @@ final class HeaderSupplementaryView: UICollectionViewCell {
         ])
         label.font = .boldSystemFont(ofSize: 22)
     }
-    
+
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     // MARK: Lifecycle
+
     override func prepareForReuse() {
         super.prepareForReuse()
         label.text = nil

@@ -4,7 +4,7 @@ class RemoteDataSource {
     var path: String { "" }
     private let session: URLSession
     private let decoder: JSONDecoder
-    
+
     init(
         session: URLSession = URLSession.shared,
         decoder: JSONDecoder = JSONDecoder()
@@ -12,7 +12,7 @@ class RemoteDataSource {
         self.session = session
         self.decoder = decoder
     }
-    
+
     func get<T: Decodable>(data: T.Type) async -> Result<T, RemoteError> {
         guard let url = URL(string: baseURL + path) else {
             return .failure(.badURL)

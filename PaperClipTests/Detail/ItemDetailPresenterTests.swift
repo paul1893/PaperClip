@@ -1,17 +1,18 @@
-import XCTest
 @testable import PaperClip
+import XCTest
 
 final class ItemDetailPresenterTests: XCTestCase {
     private var view: ItemDetailViewMock!
     private var presenter: ItemDetailPresenter!
-    
+    private let currencyFormatter = Injection.currencyFormatter
+
     override func setUpWithError() throws {
         view = ItemDetailViewMock()
         presenter = ItemDetailPresenter(
             view: view
         )
     }
-    
+
     func test_present() async {
         // WHEN
         let today = Date(timeIntervalSince1970: 1573039237)
@@ -28,7 +29,7 @@ final class ItemDetailPresenterTests: XCTestCase {
                 siret: "142568173979"
             )
         )
-        
+
         // THEN
         XCTAssertEqual(view.displayCounter, 1)
         XCTAssertEqual(
@@ -37,8 +38,8 @@ final class ItemDetailPresenterTests: XCTestCase {
                 id: 0,
                 category: "Multimédia",
                 title: "Casque",
-                description: "...\n\n06/11/2019",
-                price: Injection.currencyFormatter.string(from: NSNumber(value: 100))!,
+                description: "...\n\n11/6/19",
+                price: currencyFormatter.string(from: NSNumber(value: 100))!,
                 imageURL: URL(string: "http//www.google.com/monimage.jpg")!,
                 creationDate: "2019-11-06T11:20:37Z",
                 isUrgent: false,
@@ -46,17 +47,18 @@ final class ItemDetailPresenterTests: XCTestCase {
             )
         )
     }
-    
+
     func test_presentItemNotFound() async {
         // WHEN
         await presenter.presentItemNotFound()
-        
+
         // THEN
         XCTAssertEqual(view.displayItemNotFoundCounter, 1)
     }
 }
 
 // MARK: Mocks
+
 final class ItemDetailViewMock: ItemDetailViewProtocol {
     private(set) var lastItemPresented: ItemDetailViewModel?
     private(set) var displayCounter = 0
@@ -64,10 +66,9 @@ final class ItemDetailViewMock: ItemDetailViewProtocol {
         displayCounter += 1
         lastItemPresented = item
     }
-    
+
     private(set) var displayItemNotFoundCounter = 0
     func displayItemNotFound() {
         displayItemNotFoundCounter += 1
     }
 }
-

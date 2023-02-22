@@ -1,19 +1,18 @@
-import XCTest
 @testable import PaperClip
+import XCTest
 
 final class ItemDetailRepositoryTests: XCTestCase {
-    
     private var listItemRepository: ListItemRepositoryProtocolMock!
     private var listItemRemoteDataSource: ListItemRemoteDataSourceMock!
     private var repository: ItemDetailRepository!
-    
+
     override func setUpWithError() throws {
         listItemRepository = ListItemRepositoryProtocolMock()
         repository = ItemDetailRepository(
             listItemRepository: listItemRepository
         )
     }
-    
+
     func test_retrieve_item_for_id_when_success() async {
         // GIVEN
         let today = Date()
@@ -30,10 +29,10 @@ final class ItemDetailRepositoryTests: XCTestCase {
                 siret: "142568173979"
             )
         ])
-        
+
         // WHEN
         let result = await repository.item(forId: 0)
-        
+
         // THEN
         XCTAssertEqual(
             result,
@@ -50,7 +49,7 @@ final class ItemDetailRepositoryTests: XCTestCase {
             )
         )
     }
-    
+
     func test_retrieve_item_for_id_when_no_match() async {
         // GIVEN
         let today = Date()
@@ -67,17 +66,17 @@ final class ItemDetailRepositoryTests: XCTestCase {
                 siret: "142568173979"
             )
         ])
-        
+
         // WHEN
         let result = await repository.item(forId: 100)
-        
+
         // THEN
         XCTAssertNil(result)
     }
-    
 }
 
 // MARK: Mocks
+
 final class ListItemRepositoryProtocolMock: ListItemRepositoryProtocol {
     var itemsReturned: Result<[Item], RemoteError>?
     private(set) var itemsCounter = 0

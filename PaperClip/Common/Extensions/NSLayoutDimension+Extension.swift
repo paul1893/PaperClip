@@ -10,7 +10,7 @@ extension NSLayoutDimension {
         constraint.priority = priority
         return constraint
     }
-    
+
     func constraint(
         equalToConstant constant: CGFloat,
         priority: UILayoutPriority

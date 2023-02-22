@@ -1,17 +1,19 @@
 import UIKit
 
 final class ListItemViewController: UIViewController {
-    
     // MARK: Interactors
+
     private let loader = Injection.loader
     private lazy var interactor = Injection.listItemInteractor(self)
-    
+
     // MARK: Views
+
     private lazy var refreshControl: UIRefreshControl = {
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(didPullToRefresh(_:)), for: .valueChanged)
         return refreshControl
     }()
+
     private lazy var collectionView: UICollectionView = {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: .init())
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -25,6 +27,7 @@ final class ListItemViewController: UIViewController {
         collectionView.register(HeaderSupplementaryView.self, forSupplementaryViewOfKind: HeaderSupplementaryView.elementKindIdentifier, withReuseIdentifier: HeaderSupplementaryView.reuseIdentifier)
         return collectionView
     }()
+
     private lazy var searchController: UISearchController = {
         let searchController = UISearchController(searchResultsController: nil)
         searchController.searchResultsUpdater = self
@@ -34,33 +37,34 @@ final class ListItemViewController: UIViewController {
         searchController.searchBar.autocapitalizationType = .none
         return searchController
     }()
-    
+
     // MARK: Private properties
+
     private var collectionViewDataSource: ListItemCollectionViewDiffableDataSource!
     private var currentSnapshot = NSDiffableDataSourceSnapshot<CategoryViewModel, ItemViewModel>()
     private var currentTask: Task<Void, Never>?
     private var collectionLayout: UICollectionViewLayout {
         let sectionProvider = { [weak self] (sectionIndex: Int, layoutEnvironment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection? in
-            
+
             guard let self else { return nil }
-            
+
             let section: NSCollectionLayoutSection
-            
+
             if self.currentSnapshot.sectionIdentifiers[sectionIndex] == .urgent {
                 let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
                 let item = NSCollectionLayoutItem(layoutSize: itemSize)
-                
+
                 let groupSize = NSCollectionLayoutSize(
                     widthDimension: .fractionalWidth(layoutEnvironment.traitCollection.horizontalSizeClass == .compact ? 0.7 : 0.4),
                     heightDimension: .absolute(225)
                 )
                 let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-                
+
                 section = NSCollectionLayoutSection(group: group)
                 section.interGroupSpacing = 10
                 section.orthogonalScrollingBehavior = .continuous
                 section.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
-                section.visibleItemsInvalidationHandler = { (items, offset, environment) in
+                section.visibleItemsInvalidationHandler = { items, offset, environment in
                     items.forEach { item in
                         let distanceFromCenter = abs((item.frame.midX - offset.x) - environment.container.contentSize.width / 2.0)
                         let minScale: CGFloat = 0.7
@@ -74,31 +78,32 @@ final class ListItemViewController: UIViewController {
                 let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(150))
                 let item = NSCollectionLayoutItem(layoutSize: itemSize)
                 item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
-                
+
                 let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .estimated(150))
                 let itemInSection = self.currentSnapshot.numberOfItems(inSection: self.collectionViewDataSource.sections[sectionIndex].category)
                 let group = NSCollectionLayoutGroup.vertical(
                     layoutSize: groupSize,
                     subitems: itemInSection <= 2 ? [item] : [item, item, item]
                 )
-                
+
                 section = NSCollectionLayoutSection(group: group)
                 section.orthogonalScrollingBehavior = .continuous
                 section.interGroupSpacing = 10
                 section.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
-                
+
                 let headerItemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(100))
                 let headerItem = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerItemSize, elementKind: HeaderSupplementaryView.elementKindIdentifier, alignment: .top)
                 headerItem.pinToVisibleBounds = false
                 section.boundarySupplementaryItems = [headerItem]
-                
+
                 return section
             }
         }
         return UICollectionViewCompositionalLayout(sectionProvider: sectionProvider)
     }
-    
+
     // MARK: Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
         configureNavbar()
@@ -107,18 +112,16 @@ final class ListItemViewController: UIViewController {
         currentTask?.cancel()
         currentTask = Task { [weak self] in await self?.interactor.viewDidLoad() }
     }
-    
 }
 
 extension ListItemViewController {
-    
     private func configureNavbar() {
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.largeTitleDisplayMode = .always
         navigationItem.title = TranslationKey.ListItemViewControllerNavbarTitle.localized
         navigationItem.searchController = searchController
     }
-    
+
     private func configureCollectionView() {
         view.addSubview(collectionView)
         NSLayoutConstraint.activate([
@@ -128,38 +131,38 @@ extension ListItemViewController {
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
-    
+
     private func configureDataSource() {
         let listCellRegistration = createListCellRegistration()
         let gridCellRegistration = createGridCellRegistration()
         let loadingCellRegistration = createLoadingCellRegistration()
-        
+
         collectionViewDataSource = ListItemCollectionViewDiffableDataSource(collectionView: collectionView) { [weak self] collectionView, indexPath, item -> UICollectionViewCell? in
-            
+
             guard let self else { return nil }
-            
+
             if self.currentSnapshot.sectionIdentifiers[indexPath.section] == .urgent {
                 switch item {
-                    case .loading:
-                        return collectionView.dequeueConfiguredReusableCell(using: loadingCellRegistration, for: indexPath, item: Void())
-                    case .some(let listItem):
-                        return collectionView.dequeueConfiguredReusableCell(using: gridCellRegistration, for: indexPath, item: listItem)
+                case .loading:
+                    return collectionView.dequeueConfiguredReusableCell(using: loadingCellRegistration, for: indexPath, item: ())
+                case .some(let listItem):
+                    return collectionView.dequeueConfiguredReusableCell(using: gridCellRegistration, for: indexPath, item: listItem)
                 }
             } else {
                 switch item {
-                    case .loading:
-                        return collectionView.dequeueConfiguredReusableCell(using: loadingCellRegistration, for: indexPath, item: Void())
-                    case .some(let listItem):
-                        let cell = collectionView.dequeueConfiguredReusableCell(using: listCellRegistration, for: indexPath, item: listItem)
-                        cell.accessories = [.disclosureIndicator()]
-                        return cell
+                case .loading:
+                    return collectionView.dequeueConfiguredReusableCell(using: loadingCellRegistration, for: indexPath, item: ())
+                case .some(let listItem):
+                    let cell = collectionView.dequeueConfiguredReusableCell(using: listCellRegistration, for: indexPath, item: listItem)
+                    cell.accessories = [.disclosureIndicator()]
+                    return cell
                 }
             }
         }
     }
-    
+
     private func updateCollectionView(sections: [SectionViewModel], animated: Bool = true) {
-        self.collectionViewDataSource.sections = sections
+        collectionViewDataSource.sections = sections
         currentSnapshot = NSDiffableDataSourceSnapshot<CategoryViewModel, ItemViewModel>()
         for section in sections {
             currentSnapshot.appendSections([section.category])
@@ -167,11 +170,13 @@ extension ListItemViewController {
         }
         collectionViewDataSource.apply(currentSnapshot, animatingDifferences: animated)
     }
-    
+
     private func createGridCellRegistration() -> UICollectionView.CellRegistration<ListItemCollectionViewCell, ListItemViewModel> {
-        UICollectionView.CellRegistration<ListItemCollectionViewCell, ListItemViewModel> { [weak self] (cell, indexPath, item) in
-            guard let self else { return }
-            
+        UICollectionView.CellRegistration<ListItemCollectionViewCell, ListItemViewModel> { [weak self] cell, _, item in
+            guard let self else {
+                return
+            }
+
             var content = GridItemContentConfiguration()
             content.image = UIImage(systemName: "photo")
             content.category = item.category
@@ -179,13 +184,13 @@ extension ListItemViewController {
             content.title = item.title
             content.isUrgent = item.isUrgent
             cell.contentConfiguration = content
-            
+
             var background = UIBackgroundConfiguration.listPlainCell()
             background.cornerRadius = 8
             background.strokeColor = .systemGray3
             background.strokeWidth = 1.0 / cell.traitCollection.displayScale
             cell.backgroundConfiguration = background
-            
+
             if let imageURL = item.imageURL {
                 let token = self.loader.loadImage(imageURL) { result in
                     do {
@@ -202,21 +207,21 @@ extension ListItemViewController {
                         print(error)
                     }
                 }
-                
+
                 cell.onReuse = {
-                    if let token = token {
+                    if let token {
                         self.loader.cancelLoad(token)
                     }
                 }
             }
         }
     }
-    
+
     private func createLoadingCellRegistration() -> UICollectionView.CellRegistration<ListItemCollectionViewCell, Void> {
-        UICollectionView.CellRegistration<ListItemCollectionViewCell, Void> { [weak self] (cell, indexPath, item) in
-            
+        UICollectionView.CellRegistration<ListItemCollectionViewCell, Void> { [weak self] cell, _, _ in
+
             cell.contentConfiguration = LoadingContentConfiguration()
-            
+
             var background = UIBackgroundConfiguration.listPlainCell()
             background.cornerRadius = 8
             background.strokeColor = .systemGray3
@@ -224,11 +229,13 @@ extension ListItemViewController {
             cell.backgroundConfiguration = background
         }
     }
-    
+
     private func createListCellRegistration() -> UICollectionView.CellRegistration<ListItemCollectionViewCell, ListItemViewModel> {
-        UICollectionView.CellRegistration<ListItemCollectionViewCell, ListItemViewModel> { [weak self] (cell, indexPath, item) in
-            guard let self else { return }
-            
+        UICollectionView.CellRegistration<ListItemCollectionViewCell, ListItemViewModel> { [weak self] cell, _, item in
+            guard let self else {
+                return
+            }
+
             var content = ListItemContentConfiguration()
             content.image = UIImage(systemName: "photo")
             content.category = item.category
@@ -237,13 +244,13 @@ extension ListItemViewController {
             content.subtitle = item.subtitle
             content.isUrgent = item.isUrgent
             cell.contentConfiguration = content
-            
+
             var background = UIBackgroundConfiguration.listPlainCell()
             background.cornerRadius = 8
             background.strokeColor = .systemGray3
             background.strokeWidth = 1.0 / cell.traitCollection.displayScale
             cell.backgroundConfiguration = background
-            
+
             if let imageURL = item.imageURL {
                 let token = self.loader.loadImage(imageURL) { result in
                     do {
@@ -260,9 +267,9 @@ extension ListItemViewController {
                         print(error)
                     }
                 }
-                
+
                 cell.onReuse = {
-                    if let token = token {
+                    if let token {
                         self.loader.cancelLoad(token)
                     }
                 }
@@ -272,32 +279,31 @@ extension ListItemViewController {
 }
 
 extension ListItemViewController: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let updatedSnapshot = self.collectionViewDataSource.snapshot()
-        let item = updatedSnapshot.itemIdentifiers(inSection: self.collectionViewDataSource.sections[indexPath.section].category)[indexPath.row]
+    func collectionView(_: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let updatedSnapshot = collectionViewDataSource.snapshot()
+        let item = updatedSnapshot.itemIdentifiers(inSection: collectionViewDataSource.sections[indexPath.section].category)[indexPath.row]
         switch item {
-            case .some(let listItem):
-                currentTask?.cancel()
-                currentTask = Task { [weak self] in await self?.interactor.didSelect(item: listItem) }
-            default: break
+        case .some(let listItem):
+            currentTask?.cancel()
+            currentTask = Task { [weak self] in await self?.interactor.didSelect(item: listItem) }
+        default: break
         }
     }
 }
 
 extension ListItemViewController: ListItemViewProtocol {
-    
     func display(items: [SectionViewModel]) {
         refreshControl.endRefreshing()
         updateCollectionView(sections: items)
     }
-    
+
     func showDetail(itemId: Int) {
         navigationController?.pushViewController(
             ItemDetailViewController(itemId: itemId),
             animated: true
         )
     }
-    
+
     func showError() {
         refreshControl.endRefreshing()
         let alertViewController = UIAlertController()
@@ -311,9 +317,9 @@ extension ListItemViewController: ListItemViewProtocol {
         }())
         present(alertViewController, animated: true)
     }
-    
+
     @objc
-    private func didPullToRefresh(_ sender: Any) {
+    private func didPullToRefresh(_: Any) {
         currentTask?.cancel()
         currentTask = Task { [weak self] in await self?.interactor.didPullToRefresh() }
     }
@@ -330,19 +336,19 @@ extension ListItemViewController: UISearchResultsUpdating, UISearchControllerDel
 
 private final class ListItemCollectionViewDiffableDataSource: UICollectionViewDiffableDataSource<CategoryViewModel, ItemViewModel> {
     var sections = [SectionViewModel]()
-    
+
     override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         guard let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: HeaderSupplementaryView.reuseIdentifier, for: indexPath) as? HeaderSupplementaryView else {
             return HeaderSupplementaryView()
         }
-        
+
         switch sections[indexPath.section].category {
-            case .urgent:
-                headerView.title = nil
-            case .section(let category):
-                headerView.title = category.name
+        case .urgent:
+            headerView.title = nil
+        case .section(let category):
+            headerView.title = category.name
         }
-        
+
         return headerView
     }
 }

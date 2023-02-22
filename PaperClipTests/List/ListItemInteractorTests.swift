@@ -1,11 +1,11 @@
-import XCTest
 @testable import PaperClip
+import XCTest
 
 final class ListItemInteractorTests: XCTestCase {
     private var repository: ListItemRepositoryMock!
     private var presenter: ListItemPresenterMock!
     private var interactor: ListItemInteractor!
-    
+
     override func setUpWithError() throws {
         repository = ListItemRepositoryMock()
         presenter = ListItemPresenterMock()
@@ -14,77 +14,77 @@ final class ListItemInteractorTests: XCTestCase {
             presenter: presenter
         )
     }
-    
+
     func test_viewDidLoad_when_success() async {
         // GIVEN
         repository.itemsReturned = .success([
             generateItem(category: Category(id: 0, name: "Multimédia")),
             generateItem(category: Category(id: 1, name: "Service"))
         ])
-        
+
         // WHEN
         await interactor.viewDidLoad()
-        
+
         // THEN
         XCTAssertEqual(presenter.presentLoadingCounter, 1)
         XCTAssertEqual(presenter.presentItemsCounter, 1)
         XCTAssertEqual(
             presenter.lastItemsPresented,
             [
-                Category(id: 0, name: "Multimédia") : [generateItem(category: Category(id: 0, name: "Multimédia"))],
-                Category(id: 1, name: "Service") : [generateItem(category: Category(id: 1, name: "Service"))]
+                Category(id: 0, name: "Multimédia"): [generateItem(category: Category(id: 0, name: "Multimédia"))],
+                Category(id: 1, name: "Service"): [generateItem(category: Category(id: 1, name: "Service"))]
             ]
         )
     }
-    
+
     func test_viewDidLoad_when_failure() async {
         // GIVEN
         repository.itemsReturned = .failure(.badURL)
-        
+
         // WHEN
         await interactor.viewDidLoad()
-        
+
         // THEN
         XCTAssertEqual(presenter.presentLoadingCounter, 1)
         XCTAssertEqual(presenter.presentItemsCounter, 0)
         XCTAssertEqual(presenter.presentErrorCounter, 1)
     }
-    
+
     func test_didPullToRefresh_when_success() async {
         // GIVEN
         repository.itemsReturned = .success([
             generateItem(category: Category(id: 0, name: "Multimédia")),
             generateItem(category: Category(id: 1, name: "Service"))
         ])
-        
+
         // WHEN
         await interactor.didPullToRefresh()
-        
+
         // THEN
         XCTAssertEqual(presenter.presentLoadingCounter, 1)
         XCTAssertEqual(presenter.presentItemsCounter, 1)
         XCTAssertEqual(
             presenter.lastItemsPresented,
             [
-                Category(id: 0, name: "Multimédia") : [generateItem(category: Category(id: 0, name: "Multimédia"))],
-                Category(id: 1, name: "Service") : [generateItem(category: Category(id: 1, name: "Service"))]
+                Category(id: 0, name: "Multimédia"): [generateItem(category: Category(id: 0, name: "Multimédia"))],
+                Category(id: 1, name: "Service"): [generateItem(category: Category(id: 1, name: "Service"))]
             ]
         )
     }
-    
+
     func test_didPullToRefresh_when_failure() async {
         // GIVEN
         repository.itemsReturned = .failure(.badURL)
-        
+
         // WHEN
         await interactor.didPullToRefresh()
-        
+
         // THEN
         XCTAssertEqual(presenter.presentLoadingCounter, 1)
         XCTAssertEqual(presenter.presentItemsCounter, 0)
         XCTAssertEqual(presenter.presentErrorCounter, 1)
     }
-    
+
     func test_didSelectItem() async {
         // WHEN
         await interactor.didSelect(
@@ -98,12 +98,12 @@ final class ListItemInteractorTests: XCTestCase {
                 isUrgent: false
             )
         )
-        
+
         // THEN
         XCTAssertEqual(presenter.presentItemIdCounter, 1)
         XCTAssertEqual(presenter.lastItemIdPresented, 0)
     }
-    
+
     func test_search() async {
         // GIVEN
         repository.itemsReturned = .success([
@@ -112,10 +112,10 @@ final class ListItemInteractorTests: XCTestCase {
             generateItem(title: "Réparation d'un frigo", category: Category(id: 1, name: "Service"))
         ])
         await interactor.viewDidLoad()
-        
+
         // WHEN
         await interactor.search("Table")
-        
+
         // THEN
         XCTAssertEqual(presenter.presentItemsCounter, 2)
         XCTAssertEqual(
@@ -126,7 +126,7 @@ final class ListItemInteractorTests: XCTestCase {
             ]
         )
     }
-    
+
     func test_search_with_empty_text() async {
         // GIVEN
         repository.itemsReturned = .success([
@@ -135,10 +135,10 @@ final class ListItemInteractorTests: XCTestCase {
             generateItem(title: "Réparation d'un frigo", category: Category(id: 1, name: "Service"))
         ])
         await interactor.viewDidLoad()
-        
+
         // WHEN
         await interactor.search("")
-        
+
         // THEN
         XCTAssertEqual(presenter.presentItemsCounter, 2)
         XCTAssertEqual(
@@ -154,7 +154,7 @@ final class ListItemInteractorTests: XCTestCase {
             ]
         )
     }
-    
+
     private func generateItem(
         title: String? = nil,
         description: String? = nil,
@@ -178,6 +178,7 @@ final class ListItemInteractorTests: XCTestCase {
 }
 
 // MARK: Mocks
+
 final class ListItemRepositoryMock: ListItemRepositoryProtocol {
     var itemsReturned: Result<[Item], RemoteError>?
     var itemsCounter = 0
@@ -188,30 +189,27 @@ final class ListItemRepositoryMock: ListItemRepositoryProtocol {
 }
 
 final class ListItemPresenterMock: ListItemPresenterProtocol {
-    
     private(set) var presentLoadingCounter = 0
     func presentLoading() {
         presentLoadingCounter += 1
     }
-    
+
     private(set) var presentErrorCounter = 0
     func presentError() {
         presentErrorCounter += 1
     }
-    
-    private(set) var lastItemsPresented: [PaperClip.Category : [Item]]?
+
+    private(set) var lastItemsPresented: [PaperClip.Category: [Item]]?
     private(set) var presentItemsCounter = 0
-    func present(items: [PaperClip.Category : [Item]]) {
+    func present(items: [PaperClip.Category: [Item]]) {
         presentItemsCounter += 1
         lastItemsPresented = items
     }
-    
+
     private(set) var lastItemIdPresented: Int?
     private(set) var presentItemIdCounter = 0
     func present(itemId: Int) {
         presentItemIdCounter += 1
         lastItemIdPresented = itemId
     }
-    
-    
 }

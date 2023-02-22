@@ -6,12 +6,11 @@ protocol ItemDetailPresenterProtocol {
 }
 
 final class ItemDetailPresenter: ItemDetailPresenterProtocol {
-    
     private weak var view: (any ItemDetailViewProtocol)?
     private let dateFormatter: DateFormatter
     private let iso8601DateFormatter: ISO8601DateFormatter
     private let currencyFormatter: NumberFormatter
-    
+
     init(
         view: any ItemDetailViewProtocol,
         dateFormatter: DateFormatter = Injection.dateFormatter,
@@ -23,14 +22,14 @@ final class ItemDetailPresenter: ItemDetailPresenterProtocol {
         self.iso8601DateFormatter = iso8601DateFormatter
         self.currencyFormatter = currencyFormatter
     }
-    
+
     func present(item: Item) {
         view?.display(
             item: ItemDetailViewModel(
                 id: item.id,
                 category: item.category.name,
                 title: item.title,
-                description: item.description+"\n\n\(dateFormatter.string(from: item.creationDate))",
+                description: item.description + "\n\n\(dateFormatter.string(from: item.creationDate))",
                 price: currencyFormatter.string(from: NSNumber(value: item.price)) ?? TranslationKey.ListItemViewControllerNoPricePlaceholder.localized,
                 imageURL: item.imagesURL.thumb,
                 creationDate: iso8601DateFormatter.string(from: item.creationDate),
@@ -39,8 +38,8 @@ final class ItemDetailPresenter: ItemDetailPresenterProtocol {
             )
         )
     }
-    
-    func presentItemNotFound () {
+
+    func presentItemNotFound() {
         view?.displayItemNotFound()
     }
 }

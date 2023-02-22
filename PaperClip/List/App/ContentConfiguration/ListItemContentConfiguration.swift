@@ -1,17 +1,17 @@
 import UIKit
 
 struct ListItemContentConfiguration: UIContentConfiguration, Hashable {
-    var image: UIImage? = nil
-    var title: String? = nil
-    var subtitle: String? = nil
-    var category: String? = nil
-    var price: String? = nil
-    var isUrgent: Bool = false
-    
+    var image: UIImage?
+    var title: String?
+    var subtitle: String?
+    var category: String?
+    var price: String?
+    var isUrgent = false
+
     func makeContentView() -> UIView & UIContentView {
         ListItemContentView(configuration: self)
     }
-    
+
     func updated(for state: UIConfigurationState) -> Self {
         self
     }
@@ -19,60 +19,68 @@ struct ListItemContentConfiguration: UIContentConfiguration, Hashable {
 
 private class ListItemContentView: UIView, UIContentView {
     // MARK: Views
+
     private lazy var imageView: UIImageView = {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
+
     private lazy var titleLabel: UILabel = {
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         return titleLabel
     }()
+
     private lazy var subtitleLabel: UILabel = {
         let subtitleLabel = UILabel()
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
         return subtitleLabel
     }()
+
     private lazy var categoryBadgeLabel: BadgeLabel = {
         let categoryBadgeLabel = BadgeLabel(frame: .zero, text: "", color: .systemBlue)
         categoryBadgeLabel.translatesAutoresizingMaskIntoConstraints = false
         return categoryBadgeLabel
     }()
+
     private lazy var priceBadgeLabel: BadgeLabel = {
         let priceBadgeLabel = BadgeLabel(frame: .zero, text: "", color: .systemOrange)
         priceBadgeLabel.translatesAutoresizingMaskIntoConstraints = false
         return priceBadgeLabel
     }()
+
     private var appliedConfiguration: ListItemContentConfiguration?
-    
+
     var configuration: UIContentConfiguration {
         get { appliedConfiguration ?? UIListContentConfiguration.cell() }
         set {
-            guard let newConfig = newValue as? ListItemContentConfiguration else { return }
+            guard let newConfig = newValue as? ListItemContentConfiguration else {
+                return
+            }
             apply(configuration: newConfig)
         }
     }
-    
+
     init(configuration: ListItemContentConfiguration) {
         super.init(frame: .zero)
         self.configuration = configuration
         configureView()
         apply(configuration: configuration)
     }
-    
+
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     private func configureView() {
         addSubview(imageView)
         addSubview(titleLabel)
         addSubview(subtitleLabel)
         addSubview(categoryBadgeLabel)
         addSubview(priceBadgeLabel)
-        
+
         NSLayoutConstraint.activate([
             imageView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 8),
             imageView.widthAnchor.constraint(equalToConstant: 75),
@@ -84,27 +92,27 @@ private class ListItemContentView: UIView, UIContentView {
                 return bottomContraint
             }()
         ])
-        
+
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: imageView.centerYAnchor, constant: -100/3),
+            titleLabel.topAnchor.constraint(equalTo: imageView.centerYAnchor, constant: -100 / 3),
             titleLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 8),
             titleLabel.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, priority: UILayoutPriority(999))
         ])
-        
+
         NSLayoutConstraint.activate([
             categoryBadgeLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor),
             categoryBadgeLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 8),
             categoryBadgeLabel.heightAnchor.constraint(equalToConstant: 20),
-            categoryBadgeLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 75),
+            categoryBadgeLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 75)
         ])
-        
+
         NSLayoutConstraint.activate([
             priceBadgeLabel.centerYAnchor.constraint(equalTo: imageView.bottomAnchor),
             priceBadgeLabel.centerXAnchor.constraint(equalTo: imageView.centerXAnchor),
             priceBadgeLabel.heightAnchor.constraint(equalToConstant: 20),
             priceBadgeLabel.widthAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 0.9)
         ])
-        
+
         NSLayoutConstraint.activate([
             subtitleLabel.topAnchor.constraint(equalTo: categoryBadgeLabel.bottomAnchor),
             subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
@@ -122,11 +130,13 @@ private class ListItemContentView: UIView, UIContentView {
         categoryBadgeLabel.font = .boldSystemFont(ofSize: 8)
         priceBadgeLabel.font = .boldSystemFont(ofSize: 8)
     }
-    
+
     private func apply(configuration: ListItemContentConfiguration) {
-        guard appliedConfiguration != configuration else { return }
+        guard appliedConfiguration != configuration else {
+            return
+        }
         appliedConfiguration = configuration
-        
+
         imageView.image = configuration.image
         imageView.tintColor = .systemGray4
         titleLabel.text = configuration.title

@@ -10,7 +10,7 @@ struct Item: Equatable {
     let creationDate: Date
     let isUrgent: Bool
     let siret: String?
-    
+
     struct Images: Equatable {
         let small: URL?
         let thumb: URL?

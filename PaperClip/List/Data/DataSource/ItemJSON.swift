@@ -10,12 +10,12 @@ struct ItemJSON: Decodable {
     let creationDate: String
     let isUrgent: Bool
     let siret: String?
-    
+
     struct Images: Decodable {
         let small: URL?
         let thumb: URL?
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case id
         case categoryId = "category_id"

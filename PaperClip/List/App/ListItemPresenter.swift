@@ -1,17 +1,16 @@
 import Foundation
 
 protocol ListItemPresenterProtocol {
-    @MainActor func present(items: [Category : [Item]])
+    @MainActor func present(items: [Category: [Item]])
     @MainActor func present(itemId: Int)
     @MainActor func presentError()
     @MainActor func presentLoading()
 }
 
 final class ListItemPresenter: ListItemPresenterProtocol {
-    
     private weak var view: (any ListItemViewProtocol)?
     private let currencyFormatter: NumberFormatter
-    
+
     init(
         view: any ListItemViewProtocol,
         currencyFormatter: NumberFormatter = Injection.currencyFormatter
@@ -19,7 +18,7 @@ final class ListItemPresenter: ListItemPresenterProtocol {
         self.view = view
         self.currencyFormatter = currencyFormatter
     }
-    
+
     func presentLoading() {
         view?.display(items: [
             SectionViewModel(
@@ -32,8 +31,8 @@ final class ListItemPresenter: ListItemPresenterProtocol {
             )
         ])
     }
-    
-    func present(items: [Category : [Item]]) {
+
+    func present(items: [Category: [Item]]) {
         var result = items
             .compactMapKeys { category in
                 CategoryViewModel.section(category)
@@ -42,8 +41,10 @@ final class ListItemPresenter: ListItemPresenterProtocol {
                 $0
                     .sorted(by: { item1, item2 in item1.creationDate > item2.creationDate })
                     .compactMap { item -> ListItemViewModel? in
-                        guard !item.isUrgent else { return nil }
-                        
+                        guard !item.isUrgent else {
+                            return nil
+                        }
+
                         return item.toViewModel(with: currencyFormatter)
                     }
             }
@@ -52,13 +53,15 @@ final class ListItemPresenter: ListItemPresenterProtocol {
             .flatMap { $0 }
             .sorted(by: { item1, item2 in item1.creationDate > item2.creationDate })
             .compactMap { item -> ListItemViewModel? in
-                guard item.isUrgent else { return nil }
-                
+                guard item.isUrgent else {
+                    return nil
+                }
+
                 return item.toViewModel(with: currencyFormatter)
             }
-        
-        result = result.compactMapValues({ $0.isEmpty ? nil : $0 })
-        
+
+        result = result.compactMapValues { $0.isEmpty ? nil : $0 }
+
         view?.display(
             items: result
                 .map {
@@ -66,23 +69,23 @@ final class ListItemPresenter: ListItemPresenterProtocol {
                 }
                 .sorted(by: { section1, section2 in
                     switch (section1.category, section2.category) {
-                        case (.urgent, .urgent):
-                            return true
-                        case (.section(let category1), .section(let category2)):
-                            return category1.name < category2.name
-                        case (.section, .urgent):
-                            return false
-                        case (.urgent, .section):
-                            return true
+                    case (.urgent, .urgent):
+                        return true
+                    case (.section(let category1), .section(let category2)):
+                        return category1.name < category2.name
+                    case (.section, .urgent):
+                        return false
+                    case (.urgent, .section):
+                        return true
                     }
                 })
         )
     }
-    
+
     func present(itemId: Int) {
         view?.showDetail(itemId: itemId)
     }
-    
+
     func presentError() {
         view?.showError()
     }
