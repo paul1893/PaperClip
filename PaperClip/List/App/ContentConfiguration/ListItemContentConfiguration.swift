@@ -118,6 +118,8 @@ private class ListItemContentView: UIView, UIContentView {
             subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
             subtitleLabel.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, priority: UILayoutPriority(999)),
             subtitleLabel.bottomAnchor.constraint(equalTo: imageView.bottomAnchor)
+            //            layoutMarginsGuide.heightAnchor.constraint(equalToConstant: 44, priority: .defaultLow),
+            //            layoutMarginsGuide.widthAnchor.constraint(equalToConstant: 150, priority: .defaultLow)
         ])
         imageView.contentMode = .scaleAspectFill
         imageView.layer.cornerRadius = 8

@@ -186,8 +186,8 @@
 		2E2A2DA329A4045200FC40C5 /* DataSource */ = {
 			isa = PBXGroup;
 			children = (
-				2E71247E29A6AB0700CF02F8 /* Category */,
-				2E71247F29A6AB1100CF02F8 /* ListItem */,
+				2E71248129A6BA3300CF02F8 /* Category */,
+				2E71248229A6BA4000CF02F8 /* ListItem */,
 			);
 			path = DataSource;
 			sourceTree = "<group>";
@@ -220,7 +220,7 @@
 			path = Detail;
 			sourceTree = "<group>";
 		};
-		2E71247D29A6AAEB00CF02F8 /* Entities */ = {
+		2E71248029A6B98200CF02F8 /* Entities */ = {
 			isa = PBXGroup;
 			children = (
 				2E2A2D9D29A4004D00FC40C5 /* Category.swift */,
@@ -230,7 +230,7 @@
 			path = Entities;
 			sourceTree = "<group>";
 		};
-		2E71247E29A6AB0700CF02F8 /* Category */ = {
+		2E71248129A6BA3300CF02F8 /* Category */ = {
 			isa = PBXGroup;
 			children = (
 				2EFA421C29A04562002EC56E /* CategoryJSON.swift */,
@@ -239,7 +239,7 @@
 			path = Category;
 			sourceTree = "<group>";
 		};
-		2E71247F29A6AB1100CF02F8 /* ListItem */ = {
+		2E71248229A6BA4000CF02F8 /* ListItem */ = {
 			isa = PBXGroup;
 			children = (
 				2EFA420429A022EE002EC56E /* ItemJSON.swift */,
@@ -347,7 +347,7 @@
 		2EFA421129A026BE002EC56E /* Common */ = {
 			isa = PBXGroup;
 			children = (
-				2E71247D29A6AAEB00CF02F8 /* Entities */,
+				2E71248029A6B98200CF02F8 /* Entities */,
 				2EFA422129A04B6E002EC56E /* Extensions */,
 				2E2A2DA129A4038400FC40C5 /* Views */,
 				2EFA423829A25735002EC56E /* ImageLoader.swift */,
