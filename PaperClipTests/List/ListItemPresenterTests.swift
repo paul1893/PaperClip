@@ -34,7 +34,7 @@ final class ListItemPresenterTests: XCTestCase {
         )
     }
 
-    func test_presentItems() async {
+    func test_presentItems_when_grid_mode() async {
         // WHEN
         await presenter.present(
             items: [
@@ -46,7 +46,8 @@ final class ListItemPresenterTests: XCTestCase {
                 Category(id: 1, name: "Service"): [
                     Item(id: 3, category: Category(id: 1, name: "Service"), title: "Réparation TV", description: "...", price: 200, imagesURL: Item.Images(small: nil, thumb: nil), creationDate: Date(timeIntervalSince1970: 1572952837) /* 5/11/2019 */, isUrgent: true, siret: nil)
                 ]
-            ]
+            ],
+            with: .grid
         )
 
         // THEN
@@ -73,6 +74,48 @@ final class ListItemPresenterTests: XCTestCase {
                         ),
                         .some(
                             ListItemViewModel(id: 0, title: "TV", category: "Multimédia", imageURL: nil, subtitle: "...", price: currencyFormatter.string(from: NSNumber(value: 2000))!, isUrgent: false)
+                        )
+                    ]
+                )
+            ]
+        )
+    }
+    
+    func test_presentItems_when_list_mode() async {
+        // WHEN
+        await presenter.present(
+            items: [
+                Category(id: 0, name: "Multimédia"): [
+                    Item(id: 0, category: Category(id: 0, name: "Multimédia"), title: "TV", description: "...", price: 2000, imagesURL: Item.Images(small: nil, thumb: nil), creationDate: Date(timeIntervalSince1970: 1573039237) /* 6/11/2019 */, isUrgent: false, siret: nil),
+                    Item(id: 1, category: Category(id: 0, name: "Multimédia"), title: "TV 2", description: "...", price: 1000, imagesURL: Item.Images(small: nil, thumb: nil), creationDate: Date(timeIntervalSince1970: 1573125637) /* 7/11/2019 */, isUrgent: false, siret: nil),
+                    Item(id: 2, category: Category(id: 0, name: "Multimédia"), title: "TV 3", description: "...", price: 1500, imagesURL: Item.Images(small: nil, thumb: nil), creationDate: Date(timeIntervalSince1970: 1573125636) /* 7/11/2019 */, isUrgent: true, siret: nil)
+                ],
+                Category(id: 1, name: "Service"): [
+                    Item(id: 3, category: Category(id: 1, name: "Service"), title: "Réparation TV", description: "...", price: 200, imagesURL: Item.Images(small: nil, thumb: nil), creationDate: Date(timeIntervalSince1970: 1572952837) /* 5/11/2019 */, isUrgent: true, siret: nil)
+                ]
+            ],
+            with: .list
+        )
+
+        // THEN
+        XCTAssertEqual(view.displayCounter, 1)
+        XCTAssertEqual(
+            view.lastItemsPresented,
+            [
+                SectionViewModel(
+                    category: .section(Category(id: -1, name: "")),
+                    items: [
+                        .some(
+                            ListItemViewModel(id: 1, title: "TV 2", category: "Multimédia", imageURL: nil, subtitle: "...", price: currencyFormatter.string(from: NSNumber(value: 1000))!, isUrgent: false)
+                        ),
+                        .some(
+                            ListItemViewModel(id: 2, title: "TV 3", category: "Multimédia", imageURL: nil, subtitle: "...", price: currencyFormatter.string(from: NSNumber(value: 1500))!, isUrgent: true)
+                        ),
+                        .some(
+                            ListItemViewModel(id: 0, title: "TV", category: "Multimédia", imageURL: nil, subtitle: "...", price: currencyFormatter.string(from: NSNumber(value: 2000))!, isUrgent: false)
+                        ),
+                        .some(
+                            ListItemViewModel(id: 3, title: "Réparation TV", category: "Service", imageURL: nil, subtitle: "...", price: currencyFormatter.string(from: NSNumber(value: 200))!, isUrgent: true)
                         )
                     ]
                 )

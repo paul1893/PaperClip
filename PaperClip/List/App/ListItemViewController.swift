@@ -1,6 +1,10 @@
 import UIKit
 
 final class ListItemViewController: UIViewController {
+    enum Mode: Equatable {
+        case grid, list
+    }
+    
     // MARK: Interactors
 
     private let loader = Injection.loader
@@ -37,9 +41,52 @@ final class ListItemViewController: UIViewController {
         searchController.searchBar.autocapitalizationType = .none
         return searchController
     }()
-
+    private var unselectedGridBarButtonItem: UIBarButtonItem {
+        UIBarButtonItem(
+            image: UIImage(systemName: "square.grid.2x2"),
+            primaryAction: UIAction(handler: { [weak self] _ in
+                guard let self else { return }
+                self.currentMode = .grid
+                self.currentTask?.cancel()
+                self.currentTask = Task { [weak self] in
+                    guard let self else { return }
+                    await self.interactor.viewDidLoad(in: self.currentMode)
+                }
+                self.navigationItem.rightBarButtonItem = self.selectedGridBarButtonItem
+                self.collectionView.setCollectionViewLayout(
+                    self.collectionLayout,
+                    animated: false
+                )
+                self.collectionView.reloadData()
+                self.collectionView.scrollToItem(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
+            })
+        )
+    }
+    
+    private var selectedGridBarButtonItem: UIBarButtonItem {
+        UIBarButtonItem(
+            image: UIImage(systemName: "square.grid.2x2.fill"),
+            primaryAction: UIAction(handler: { [weak self] _ in
+                guard let self else { return }
+                self.currentMode = .list
+                self.currentTask?.cancel()
+                self.currentTask = Task { [weak self] in
+                    guard let self else { return }
+                    await self.interactor.viewDidLoad(in: self.currentMode)
+                }
+                self.navigationItem.rightBarButtonItem = self.unselectedGridBarButtonItem
+                self.collectionView.setCollectionViewLayout(
+                    self.collectionLayout,
+                    animated: false
+                )
+                self.collectionView.reloadData()
+                self.collectionView.scrollToItem(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
+            })
+        )
+    }
+    
     // MARK: Private properties
-
+    private var currentMode = Mode.grid
     private lazy var collectionViewDataSource = {
         let defaultCellRegistration = createDefaultCellRegistration()
         let urgentCellRegistration = createUrgentCellRegistration()
@@ -69,63 +116,71 @@ final class ListItemViewController: UIViewController {
         }
     }()
     private var collectionLayout: UICollectionViewLayout {
-        let sectionProvider = { [weak self] (sectionIndex: Int, layoutEnvironment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection? in
-            
-            guard let self else { return nil }
-            guard self.currentSnapshot.sectionIdentifiers.indices.contains(sectionIndex)  else { return nil }
-            
-            let section: NSCollectionLayoutSection
-            
-            if self.currentSnapshot.sectionIdentifiers[sectionIndex] == .urgent {
-                let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
-                let item = NSCollectionLayoutItem(layoutSize: itemSize)
-                
-                let groupSize = NSCollectionLayoutSize(
-                    widthDimension: .fractionalWidth(layoutEnvironment.traitCollection.horizontalSizeClass == .compact ? 0.7 : 0.4),
-                    heightDimension: .absolute(225)
+        let layout: UICollectionViewCompositionalLayout
+        switch currentMode {
+            case .list:
+                layout = UICollectionViewCompositionalLayout.list(
+                    using: UICollectionLayoutListConfiguration(appearance: .insetGrouped)
                 )
-                let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-                
-                section = NSCollectionLayoutSection(group: group)
-                section.interGroupSpacing = 10
-                section.orthogonalScrollingBehavior = .continuous
-                section.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
-                section.visibleItemsInvalidationHandler = { items, offset, environment in
-                    items.forEach { item in
-                        let distanceFromCenter = abs((item.frame.midX - offset.x) - environment.container.contentSize.width / 2.0)
-                        let minScale: CGFloat = 0.7
-                        let maxScale: CGFloat = 1.1
-                        let scale = max(maxScale - (distanceFromCenter / environment.container.contentSize.width), minScale)
-                        item.transform = CGAffineTransform(scaleX: scale, y: scale)
+            case .grid:
+                let sectionProvider = { [weak self] (sectionIndex: Int, layoutEnvironment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection? in
+                    
+                    guard let self else { return nil }
+                    
+                    let section: NSCollectionLayoutSection
+                    
+                    if self.currentSnapshot.sectionIdentifiers[sectionIndex] == .urgent {
+                        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+                        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+                        
+                        let groupSize = NSCollectionLayoutSize(
+                            widthDimension: .fractionalWidth(layoutEnvironment.traitCollection.horizontalSizeClass == .compact ? 0.7 : 0.4),
+                            heightDimension: .absolute(225)
+                        )
+                        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+                        
+                        section = NSCollectionLayoutSection(group: group)
+                        section.interGroupSpacing = 10
+                        section.orthogonalScrollingBehavior = .continuous
+                        section.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
+                        section.visibleItemsInvalidationHandler = { (items, offset, environment) in
+                            items.forEach { item in
+                                let distanceFromCenter = abs((item.frame.midX - offset.x) - environment.container.contentSize.width / 2.0)
+                                let minScale: CGFloat = 0.7
+                                let maxScale: CGFloat = 1.1
+                                let scale = max(maxScale - (distanceFromCenter / environment.container.contentSize.width), minScale)
+                                item.transform = CGAffineTransform(scaleX: scale, y: scale)
+                            }
+                        }
+                        return section
+                    } else {
+                        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(150))
+                        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+                        item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
+                        
+                        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .estimated(150))
+                        let itemInSection = self.currentSnapshot.numberOfItems(inSection: self.collectionViewDataSource.sections[sectionIndex].category)
+                        let group = NSCollectionLayoutGroup.vertical(
+                            layoutSize: groupSize,
+                            subitems: itemInSection <= 2 ? [item] : [item, item, item]
+                        )
+                        
+                        section = NSCollectionLayoutSection(group: group)
+                        section.orthogonalScrollingBehavior = .continuous
+                        section.interGroupSpacing = 10
+                        section.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
+                        
+                        let headerItemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(100))
+                        let headerItem = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerItemSize, elementKind: SectionCollectionViewCell.elementKindIdentifier, alignment: .top)
+                        headerItem.pinToVisibleBounds = false
+                        section.boundarySupplementaryItems = [headerItem]
+                        
+                        return section
                     }
                 }
-                return section
-            } else {
-                let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(150))
-                let item = NSCollectionLayoutItem(layoutSize: itemSize)
-                item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
-                
-                let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .estimated(150))
-                let itemInSection = self.currentSnapshot.numberOfItems(inSection: self.collectionViewDataSource.sections[sectionIndex].category)
-                let group = NSCollectionLayoutGroup.vertical(
-                    layoutSize: groupSize,
-                    subitems: itemInSection <= 2 ? [item] : [item, item, item]
-                )
-                
-                section = NSCollectionLayoutSection(group: group)
-                section.orthogonalScrollingBehavior = .continuous
-                section.interGroupSpacing = 10
-                section.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
-                
-                let headerItemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(100))
-                let headerItem = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerItemSize, elementKind: SectionCollectionViewCell.elementKindIdentifier, alignment: .top)
-                headerItem.pinToVisibleBounds = false
-                section.boundarySupplementaryItems = [headerItem]
-                
-                return section
-            }
+                layout = UICollectionViewCompositionalLayout(sectionProvider: sectionProvider)
         }
-        return UICollectionViewCompositionalLayout(sectionProvider: sectionProvider)
+        return layout
     }
     private var currentSnapshot = NSDiffableDataSourceSnapshot<CategoryViewModel, ListItemState>()
     private var currentTask: Task<Void, Never>?
@@ -137,7 +192,10 @@ final class ListItemViewController: UIViewController {
         configureNavbar()
         configureCollectionView()
         currentTask?.cancel()
-        currentTask = Task { [weak self] in await self?.interactor.viewDidLoad() }
+        currentTask = Task { [weak self] in
+            guard let self else { return }
+            await self.interactor.viewDidLoad(in: self.currentMode)
+        }
     }
 }
 
@@ -146,6 +204,7 @@ extension ListItemViewController {
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.largeTitleDisplayMode = .always
         navigationItem.title = TranslationKey.ListItemViewControllerNavbarTitle.localized
+        navigationItem.rightBarButtonItem = currentMode == .list ? unselectedGridBarButtonItem : selectedGridBarButtonItem
         navigationItem.searchController = searchController
     }
 
@@ -309,7 +368,10 @@ extension ListItemViewController: ListItemViewProtocol {
         alertViewController.addAction({
             let action = UIAlertAction(title: TranslationKey.ListItemViewControllerPopupNetworkFailedRetryButton.localized, style: .default) { _ in
                 self.currentTask?.cancel()
-                self.currentTask = Task { [weak self] in await self?.interactor.didPullToRefresh() }
+                self.currentTask = Task { [weak self] in
+                    guard let self else { return }
+                    await self.interactor.didPullToRefresh(in: self.currentMode)
+                }
             }
             return action
         }())
@@ -319,7 +381,10 @@ extension ListItemViewController: ListItemViewProtocol {
     @objc
     private func didPullToRefresh(_: Any) {
         currentTask?.cancel()
-        currentTask = Task { [weak self] in await self?.interactor.didPullToRefresh() }
+        currentTask = Task { [weak self] in
+            guard let self else { return }
+            await self.interactor.didPullToRefresh(in: self.currentMode)
+        }
     }
 }
 
@@ -327,7 +392,10 @@ extension ListItemViewController: UISearchResultsUpdating, UISearchControllerDel
     func updateSearchResults(for searchController: UISearchController) {
         if let searchText = searchController.searchBar.text {
             currentTask?.cancel()
-            currentTask = Task { [weak self] in await self?.interactor.search(searchText) }
+            currentTask = Task { [weak self] in
+                guard let self else { return }
+                await self.interactor.search(searchText, in: self.currentMode)
+            }
         }
     }
 }

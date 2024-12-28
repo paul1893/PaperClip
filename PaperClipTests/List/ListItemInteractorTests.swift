@@ -23,7 +23,7 @@ final class ListItemInteractorTests: XCTestCase {
         ])
 
         // WHEN
-        await interactor.viewDidLoad()
+        await interactor.viewDidLoad(in: .grid)
 
         // THEN
         XCTAssertEqual(presenter.presentLoadingCounter, 1)
@@ -35,6 +35,7 @@ final class ListItemInteractorTests: XCTestCase {
                 Category(id: 1, name: "Service"): [generateItem(category: Category(id: 1, name: "Service"))]
             ]
         )
+        XCTAssertEqual(presenter.lastModePresented, .grid)
     }
 
     func test_viewDidLoad_when_failure() async {
@@ -42,12 +43,13 @@ final class ListItemInteractorTests: XCTestCase {
         repository.itemsReturned = .failure(.badURL)
 
         // WHEN
-        await interactor.viewDidLoad()
+        await interactor.viewDidLoad(in: .grid)
 
         // THEN
         XCTAssertEqual(presenter.presentLoadingCounter, 1)
         XCTAssertEqual(presenter.presentItemsCounter, 0)
         XCTAssertEqual(presenter.presentErrorCounter, 1)
+        XCTAssertEqual(presenter.lastModePresented, nil)
     }
 
     func test_didPullToRefresh_when_success() async {
@@ -58,7 +60,7 @@ final class ListItemInteractorTests: XCTestCase {
         ])
 
         // WHEN
-        await interactor.didPullToRefresh()
+        await interactor.didPullToRefresh(in: .grid)
 
         // THEN
         XCTAssertEqual(presenter.presentLoadingCounter, 1)
@@ -70,6 +72,7 @@ final class ListItemInteractorTests: XCTestCase {
                 Category(id: 1, name: "Service"): [generateItem(category: Category(id: 1, name: "Service"))]
             ]
         )
+        XCTAssertEqual(presenter.lastModePresented, .grid)
     }
 
     func test_didPullToRefresh_when_failure() async {
@@ -77,12 +80,13 @@ final class ListItemInteractorTests: XCTestCase {
         repository.itemsReturned = .failure(.badURL)
 
         // WHEN
-        await interactor.didPullToRefresh()
+        await interactor.didPullToRefresh(in: .grid)
 
         // THEN
         XCTAssertEqual(presenter.presentLoadingCounter, 1)
         XCTAssertEqual(presenter.presentItemsCounter, 0)
         XCTAssertEqual(presenter.presentErrorCounter, 1)
+        XCTAssertEqual(presenter.lastModePresented, nil)
     }
 
     func test_didSelectItem() async {
@@ -111,10 +115,10 @@ final class ListItemInteractorTests: XCTestCase {
             generateItem(description: "... une table ...", category: Category(id: 1, name: "Service")),
             generateItem(title: "Réparation d'un frigo", category: Category(id: 1, name: "Service"))
         ])
-        await interactor.viewDidLoad()
+        await interactor.viewDidLoad(in: .grid)
 
         // WHEN
-        await interactor.search("Table")
+        await interactor.search("Table", in: .grid)
 
         // THEN
         XCTAssertEqual(presenter.presentItemsCounter, 2)
@@ -125,6 +129,7 @@ final class ListItemInteractorTests: XCTestCase {
                 Category(id: 1, name: "Service"): [generateItem(description: "... une table ...", category: Category(id: 1, name: "Service"))]
             ]
         )
+        XCTAssertEqual(presenter.lastModePresented, .grid)
     }
 
     func test_search_with_empty_text() async {
@@ -134,10 +139,10 @@ final class ListItemInteractorTests: XCTestCase {
             generateItem(description: "... une table ...", category: Category(id: 1, name: "Service")),
             generateItem(title: "Réparation d'un frigo", category: Category(id: 1, name: "Service"))
         ])
-        await interactor.viewDidLoad()
+        await interactor.viewDidLoad(in: .grid)
 
         // WHEN
-        await interactor.search("")
+        await interactor.search("", in: .grid)
 
         // THEN
         XCTAssertEqual(presenter.presentItemsCounter, 2)
@@ -153,6 +158,7 @@ final class ListItemInteractorTests: XCTestCase {
                 ]
             ]
         )
+        XCTAssertEqual(presenter.lastModePresented, .grid)
     }
 
     private func generateItem(
@@ -200,10 +206,12 @@ final class ListItemPresenterMock: ListItemPresenterProtocol {
     }
 
     private(set) var lastItemsPresented: [PaperClip.Category: [Item]]?
+    private(set) var lastModePresented: ListItemViewController.Mode?
     private(set) var presentItemsCounter = 0
-    func present(items: [PaperClip.Category: [Item]]) {
+    func present(items: [PaperClip.Category: [Item]], with mode: PaperClip.ListItemViewController.Mode) {
         presentItemsCounter += 1
         lastItemsPresented = items
+        lastModePresented = mode
     }
 
     private(set) var lastItemIdPresented: Int?
