@@ -46,6 +46,7 @@ final class ItemDetailViewController: UIViewController {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.font = .boldSystemFont(ofSize: 16)
         titleLabel.numberOfLines = 3
+//        titleLabel.setContentHuggingPriority(.defaultHigh, for: .vertical) TODO PBA
         return titleLabel
     }()
 
@@ -56,6 +57,7 @@ final class ItemDetailViewController: UIViewController {
         badgeStackView.alignment = .fill
         badgeStackView.distribution = .fillProportionally
         badgeStackView.spacing = UIStackView.spacingUseSystem
+//        badgeStackView.setContentHuggingPriority(.defaultHigh, for: .vertical) TODO PBA
         return badgeStackView
     }()
 

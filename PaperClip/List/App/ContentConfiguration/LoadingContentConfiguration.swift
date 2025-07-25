@@ -49,7 +49,7 @@ private class LoadingContentView: UIView, UIContentView {
             shimmerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             shimmerView.bottomAnchor.constraint(equalTo: bottomAnchor),
             shimmerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            layoutMarginsGuide.heightAnchor.constraint(equalToConstant: 44, priority: .defaultLow)
+            layoutMarginsGuide.heightAnchor.constraint(equalToConstant: 44, priority: .defaultLow) // TODO: PBA - keep to avoid crash when in list mode
         ])
         shimmerView.startAnimating()
     }
